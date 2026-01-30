@@ -1,0 +1,20 @@
+{
+  "name": "openjimmy",
+  "version": "1.0.0",
+  "description": "iMessage channel plugin for OpenClaw - works on macOS 11+ using SQLite + AppleScript",
+  "main": "index.js",
+  "type": "module",
+  "keywords": ["openclaw", "imessage", "macos", "channel", "plugin"],
+  "author": "woodbeary",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woodbeary/openjimmy.git"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
