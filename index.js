@@ -417,7 +417,7 @@ const channel = {
                 if (!emoji || isRemove) continue;
                 
                 const context = getReplyContext(db, msg.associated_message_guid, log);
-                msg.tapbackText = `${emoji} reacted to: "${context?.text?.slice(0, 50) || 'message'}${(context?.text?.length || 0) > 50 ? '...' : ''}"`;
+                msg.tapbackText = `${emoji} reacted to: "${context?.text || 'message'}"`;
               }
               
               // Skip if no text and no attachments and no tapback
@@ -463,9 +463,9 @@ const channel = {
               
               // Add reply context if present (not for tapbacks)
               if (replyContext && !msg.tapbackText) {
-                const quotedText = replyContext.text?.slice(0, 100);
+                const quotedText = replyContext.text;
                 if (quotedText) {
-                  bodyText = `[Replying to: "${quotedText}${(replyContext.text?.length || 0) > 100 ? '...' : ''}"]\n${bodyText}`;
+                  bodyText = `[Replying to: "${quotedText}"]\n${bodyText}`;
                 }
               }
               
