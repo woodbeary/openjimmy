@@ -1,5 +1,5 @@
 {
-  "id": "imessage-bridge",
+  "id": "imessage-legacy",
   "name": "OpenJimmy - iMessage Legacy",
   "version": "1.0.0",
   "description": "iMessage channel for macOS 11+ (Big Sur, Monterey, Ventura, Sonoma) using SQLite polling + AppleScript. No imsg CLI required.",

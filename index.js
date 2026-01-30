@@ -125,7 +125,10 @@ const channel = {
       }
       
       let running = true;
-      abortSignal?.addEventListener("abort", () => { running = false; });
+      abortSignal?.addEventListener("abort", () => { running = false; log?.info(`[iMessage][${instanceId}] Aborted`); });
+      
+      const instanceId = Math.random().toString(36).slice(2, 6);
+      log?.info(`[iMessage] Instance ${instanceId} created`);
       
       async function poll() {
         if (!running) return;
@@ -139,9 +142,15 @@ const channel = {
               FROM message m LEFT JOIN handle h ON m.handle_id = h.ROWID
               LEFT JOIN chat_message_join cmj ON m.ROWID = cmj.message_id
               LEFT JOIN chat c ON cmj.chat_id = c.ROWID
-              WHERE m.ROWID > ? AND m.is_from_me = 0 ORDER BY m.ROWID LIMIT 20
+              WHERE m.ROWID > ? AND m.is_from_me = 0 
+              GROUP BY m.ROWID
+              ORDER BY m.ROWID LIMIT 20
             `).all(state.lastRowId);
             
+            log?.info(`[iMessage][${instanceId}] Found ${msgs.length} msgs, lastRowId=${state.lastRowId}, maxId=${maxId}`);
+            
+            // First pass: filter and mark all messages as processed BEFORE any async work
+            const toProcess = [];
             for (const msg of msgs) {
               state.lastRowId = Math.max(state.lastRowId, msg.ROWID);
               if (!msg.text?.trim() || !msg.sender) continue;
@@ -150,13 +159,21 @@ const channel = {
               // Dedupe - skip if already processed
               if (state.processedIds.includes(msg.ROWID)) continue;
               state.processedIds.push(msg.ROWID);
-              // Keep only last 100 processed IDs
-              if (state.processedIds.length > 100) state.processedIds = state.processedIds.slice(-100);
-              
+              toProcess.push(msg);
+            }
+            
+            // Keep only last 100 processed IDs
+            if (state.processedIds.length > 100) state.processedIds = state.processedIds.slice(-100);
+            
+            // Save state BEFORE async dispatch to prevent race conditions
+            fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
+            
+            // Now process messages
+            for (const msg of toProcess) {
               const isGroup = msg.style === 43 || msg.chat_identifier?.startsWith("chat");
               const chatId = isGroup ? msg.chat_identifier : msg.sender;
               
-              log?.info(`[iMessage] From ${msg.sender}: "${msg.text.slice(0, 50)}"`);
+              log?.info(`[iMessage][${instanceId}] ROWID=${msg.ROWID} From ${msg.sender}: "${msg.text.slice(0, 50)}"`);
               
               try {
                 // Build session key - DMs share main, groups isolated
@@ -222,11 +239,9 @@ const channel = {
                 log?.error(`[iMessage] Dispatch error: ${err.stack || err.message}`);
               }
             }
-            
-            fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
           }
         } catch (err) {
-          log?.error(`[iMessage] Poll error: ${err.message}`);
+          log?.error(`[iMessage][${instanceId}] Poll error: ${err.message}`);
         }
         
         if (running) setTimeout(poll, pollMs);
