@@ -461,13 +461,7 @@ const channel = {
               // Build message text
               let bodyText = msg.tapbackText || msg.text || "";
               
-              // Add reply context if present (not for tapbacks)
-              if (replyContext && !msg.tapbackText) {
-                const quotedText = replyContext.text;
-                if (quotedText) {
-                  bodyText = `[Replying to: "${quotedText}"]\n${bodyText}`;
-                }
-              }
+              // Reply context is passed as metadata, not injected into body
               
               if (!bodyText.trim() && mediaPaths.length === 0) continue;
               
