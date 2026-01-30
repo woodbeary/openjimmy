@@ -1,91 +1,149 @@
-# OpenJimmy 🍍
+# OpenJimmy 📱
 
-iMessage channel plugin for [OpenClaw](https://openclaw.ai) that works on **macOS 11+** (Big Sur, Monterey, Ventura, Sonoma).
+**iMessage channel plugin for OpenClaw** — Works on macOS 11+ (Big Sur, Monterey, Ventura, Sonoma, Sequoia)
 
-No `imsg` CLI required — uses SQLite polling + AppleScript.
+Talk to your AI assistant via iMessage. No third-party services, no cloud relay — just your Mac.
 
-## Why?
+## Features
 
-The official `imsg` CLI requires macOS 12.3+ (Monterey). OpenJimmy works on older macOS versions by reading directly from the Messages SQLite database.
+- ✅ Direct SQLite polling (no CLI tools needed)
+- ✅ AppleScript for sending (native macOS)
+- ✅ Works on older Macs (macOS 11+)
+- ✅ Duplicate message prevention
+- ✅ Group chat support
+- ✅ Media attachments
 
-## Installation
+## Quick Install
 
 ```bash
-# Clone to your OpenClaw plugins directory
-git clone https://github.com/woodbeary/openjimmy.git ~/.openclaw/plugins/openjimmy
-cd ~/.openclaw/plugins/openjimmy
+# Clone the repo
+git clone https://github.com/woodbeary/openjimmy.git
+cd openjimmy
+
+# Run the setup wizard
+node setup.js
+```
+
+The wizard will:
+1. Check your macOS version and permissions
+2. Install dependencies
+3. Help configure OpenClaw
+4. Test the connection
+
+## Manual Install
+
+### Prerequisites
+
+- macOS 11+ (Big Sur or later)
+- Node.js 18+
+- [OpenClaw](https://github.com/openclaw/openclaw) installed
+- Full Disk Access enabled for Terminal
+
+### Enable Full Disk Access
+
+1. Open **System Preferences** → **Security & Privacy** → **Privacy**
+2. Select **Full Disk Access** from the sidebar
+3. Click the lock 🔒 and authenticate
+4. Click **+** and add **Terminal** (or iTerm, etc.)
+5. Restart Terminal
+
+### Install
+
+```bash
+git clone https://github.com/woodbeary/openjimmy.git
+cd openjimmy
 npm install
 ```
 
-Add to your `~/.openclaw/openclaw.json`:
+### Configure
 
-```json
-{
-  "plugins": {
-    "load": {
-      "paths": ["~/.openclaw/plugins/openjimmy"]
-    },
-    "entries": {
-      "openjimmy": { "enabled": true }
-    }
-  },
-  "channels": {
-    "imessage-legacy": {
-      "enabled": true,
-      "dmPolicy": "allowlist",
-      "allowFrom": ["+1234567890"]
-    }
-  }
-}
+Add to your `~/.openclaw/config.yaml`:
+
+```yaml
+channels:
+  imessage-legacy:
+    plugin: "/path/to/openjimmy"
+    ownerNumbers:
+      - "+1XXXXXXXXXX"  # Your phone number
 ```
 
-Restart the gateway:
+### Start
+
 ```bash
 openclaw gateway restart
 ```
 
+## Configuration Options
+
+```yaml
+channels:
+  imessage-legacy:
+    plugin: "/path/to/openjimmy"
+    
+    # Required: Numbers that can control the bot (your numbers)
+    ownerNumbers:
+      - "+19995551234"
+    
+    # Optional: Additional allowed numbers
+    allowedNumbers:
+      - "+19995555678"
+    
+    # Optional: Poll interval in ms (default: 2000)
+    pollInterval: 2000
+    
+    # Optional: Enable debug logging
+    debug: false
+```
+
+## Troubleshooting
+
+### "Operation not permitted" error
+
+Full Disk Access isn't enabled. See [Enable Full Disk Access](#enable-full-disk-access).
+
+### Messages send but no response
+
+1. Check the gateway is running: `openclaw gateway status`
+2. Check logs: `tail -f ~/.openclaw/gateway.log`
+3. Make sure your number is in `ownerNumbers`
+
+### AppleScript errors
+
+Allow Terminal to control Messages:
+1. **System Preferences** → **Security & Privacy** → **Privacy** → **Automation**
+2. Enable **Terminal** → **Messages**
+
+### Duplicate messages
+
+This was fixed in v1.0.0. If you're seeing duplicates, update to the latest version:
+```bash
+cd openjimmy && git pull && npm install
+openclaw gateway restart
+```
+
+## How It Works
+
+1. **Polling**: Reads new messages from `~/Library/Messages/chat.db` (SQLite)
+2. **Processing**: Sends messages to OpenClaw for AI response
+3. **Sending**: Uses AppleScript to send replies via Messages.app
+
+No external services. Everything runs locally on your Mac.
+
 ## Requirements
 
-- **macOS 11+** (Big Sur, Monterey, Ventura, Sonoma)
-- **Full Disk Access** for the OpenClaw process (to read Messages database)
-- **Messages app** signed in with your Apple ID
-- **Automation permission** (granted on first send)
-
-## How it works
-
-1. **Polls** `~/Library/Messages/chat.db` every second for new messages
-2. **Routes** through OpenClaw's dispatch system (proper session management)
-3. **Sends** replies via AppleScript to Messages.app
-
-## Configuration
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `enabled` | `false` | Enable the channel |
-| `dmPolicy` | `"allowlist"` | `allowlist`, `open`, or `disabled` |
-| `allowFrom` | `[]` | Phone numbers/emails allowed to message |
-| `pollIntervalMs` | `1000` | How often to check for new messages |
-
-## Session Behavior
-
-- **DMs** → Share the main agent session (`agent:main:main`)
-- **Groups** → Isolated sessions per group
-
-This matches the built-in iMessage channel behavior.
-
-## Permissions
-
-On first run, macOS will prompt for:
-
-1. **Full Disk Access** — needed to read `chat.db`
-2. **Automation** — needed to send via Messages.app
-
-Grant these in System Preferences → Security & Privacy → Privacy.
+| macOS Version | Status |
+|--------------|--------|
+| 15 (Sequoia) | ✅ |
+| 14 (Sonoma) | ✅ |
+| 13 (Ventura) | ✅ |
+| 12 (Monterey) | ✅ |
+| 11 (Big Sur) | ✅ |
+| 10.x | ❌ Not supported |
 
 ## License
 
-MIT
+MIT © [woodbeary](https://github.com/woodbeary)
 
-## Credits
+---
 
-Built with 🍍 by [woodbeary](https://github.com/woodbeary) and Claude during a late night hacking session.
+Part of the [OpenClaw](https://github.com/openclaw/openclaw) ecosystem 🐾
