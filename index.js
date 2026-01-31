@@ -466,8 +466,20 @@ const channel = {
                 }
               }
               
+              // Get reply context if this is a quote-reply
+              let replyContext = null;
+              const replyGuid = msg.reply_to_guid || msg.thread_originator_guid;
+              if (replyGuid) {
+                replyContext = getReplyContext(db, replyGuid, log);
+              }
+              
               // Build message text
               let bodyText = msg.tapbackText || msg.text || "";
+              
+              // Add clean reply context if present
+              if (replyContext && !msg.tapbackText) {
+                bodyText = `[Quoting ${replyContext.sender}: "${replyContext.text}"]\n${bodyText}`;
+              }
               
               if (!bodyText.trim() && mediaPaths.length === 0) continue;
               
