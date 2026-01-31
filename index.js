@@ -199,11 +199,26 @@ function getReplyContext(db, replyToGuid, log) {
     if (guid.startsWith("bp:")) guid = guid.slice(3);
     
     const original = db.prepare(`
-      SELECT text, ROWID FROM message WHERE guid = ? LIMIT 1
+      SELECT m.text, m.ROWID, m.is_from_me, m.date, h.id as sender
+      FROM message m
+      LEFT JOIN handle h ON m.handle_id = h.ROWID
+      WHERE m.guid = ? LIMIT 1
     `).get(guid);
     
     if (original?.text) {
-      return { guid, text: original.text, rowId: original.ROWID };
+      // Determine sender name
+      let senderName = "me";
+      if (!original.is_from_me && original.sender) {
+        senderName = resolveContactName(original.sender) || original.sender;
+      }
+      
+      return { 
+        guid, 
+        text: original.text, 
+        rowId: original.ROWID,
+        sender: senderName,
+        isFromMe: original.is_from_me === 1
+      };
     }
   } catch (e) {
     log?.debug?.(`[iMessage] Reply context lookup error: ${e.message}`);
@@ -451,17 +466,8 @@ const channel = {
                 }
               }
               
-              // Get reply context
-              let replyContext = null;
-              const replyGuid = msg.reply_to_guid || msg.thread_originator_guid;
-              if (replyGuid) {
-                replyContext = getReplyContext(db, replyGuid, log);
-              }
-              
               // Build message text
               let bodyText = msg.tapbackText || msg.text || "";
-              
-              // Reply context is passed as metadata, not injected into body
               
               if (!bodyText.trim() && mediaPaths.length === 0) continue;
               
